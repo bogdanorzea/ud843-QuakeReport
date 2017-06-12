@@ -84,12 +84,12 @@ public final class QueryUtils {
         return earthquakes;
     }
 
-    private static String makeUSGSRequest(String query_url) throws IOException {
+    private static String makeUSGSRequest(String requestUrl) throws IOException {
         String result = null;
 
         URL url = null;
         try {
-            url = new URL(query_url);
+            url = new URL(requestUrl);
         } catch (MalformedURLException e) {
             Log.e(LOG_TAG, "Error while creating URL", e);
             return null;
