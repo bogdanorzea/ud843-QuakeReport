@@ -15,9 +15,10 @@
  */
 package com.example.android.quakereport;
 
+import android.app.LoaderManager;
 import android.content.Intent;
+import android.content.Loader;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -27,46 +28,54 @@ import android.widget.ListView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EarthquakeActivity extends AppCompatActivity {
+public class EarthquakeActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<List<Earthquake>> {
 
     public static final String LOG_TAG = EarthquakeActivity.class.getName();
-    ListView earthquakeListView;
+    private static final String USGS_QUERY_LINK =
+            "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6&limit=10";
+
+    EarthquakeAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.earthquake_activity);
 
-        new AddEartquakesUSGS().execute();
+        ListView earthquakeListView = (ListView) findViewById(R.id.list);
+        mAdapter = new EarthquakeAdapter(getApplicationContext(), new ArrayList<Earthquake>());
+
+        earthquakeListView.setAdapter(mAdapter);
+
+        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Earthquake eq = (Earthquake) adapterView.getItemAtPosition(i);
+                Intent openUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(eq.getUrl()));
+                startActivity(openUrlIntent);
+            }
+        });
+
+        getLoaderManager().initLoader(1, null, this);
     }
 
-    class AddEartquakesUSGS extends AsyncTask<Void, Void, List<Earthquake>> {
-        ArrayList<Earthquake> earthquakes = null;
+    @Override
+    public Loader<List<Earthquake>> onCreateLoader(int i, Bundle bundle) {
+        return new EarthquakeLoader(this, USGS_QUERY_LINK);
+    }
 
-        @Override
-        protected void onPostExecute(final List<Earthquake> earthquakes) {
-            // Find a reference to the {@link ListView} in the layout
-            earthquakeListView = (ListView) findViewById(R.id.list);
+    @Override
+    public void onLoadFinished(Loader<List<Earthquake>> loader, final List<Earthquake> earthquakes) {
+        mAdapter.clear();
 
-            // Create a new {@link ArrayAdapter} of earthquakes
-            EarthquakeAdapter adapter = new EarthquakeAdapter(getApplicationContext(), earthquakes);
-
-            // Set the adapter on the {@link ListView}
-            // so the list can be populated in the user interface
-            earthquakeListView.setAdapter(adapter);
-
-            earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    Intent openUrlIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(earthquakes.get(i).getUrl()));
-                    startActivity(openUrlIntent);
-                }
-            });
+        // If there is a valid list of {@link Earthquake}s, then add them to the adapter's
+        // data set. This will trigger the ListView to update.
+        if (earthquakes != null && !earthquakes.isEmpty()) {
+            mAdapter.addAll(earthquakes);
         }
+    }
 
-        @Override
-        protected List<Earthquake> doInBackground(Void... voids) {
-            return QueryUtils.extractEarthquakes();
-        }
+    @Override
+    public void onLoaderReset(Loader<List<Earthquake>> loader) {
+        mAdapter.clear();
     }
 }

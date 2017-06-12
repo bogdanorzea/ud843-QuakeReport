@@ -25,11 +25,6 @@ import static com.example.android.quakereport.EarthquakeActivity.LOG_TAG;
 public final class QueryUtils {
 
     /**
-     * USGS query link
-     */
-    private static final String USGS_QUERY_LINK = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&eventtype=earthquake&orderby=time&minmag=6&limit=10";
-
-    /**
      * Create a private constructor because no one should ever create a {@link QueryUtils} object.
      * This class is only meant to hold static variables and methods, which can be accessed
      * directly from the class name QueryUtils (and an object instance of QueryUtils is not needed).
@@ -41,7 +36,7 @@ public final class QueryUtils {
      * Return a list of {@link Earthquake} objects that has been built up from
      * parsing a JSON response.
      */
-    public static ArrayList<Earthquake> extractEarthquakes() {
+    public static ArrayList<Earthquake> extractEarthquakes(String query_url) {
 
         // Create an empty ArrayList that we can start adding earthquakes to
         ArrayList<Earthquake> earthquakes = new ArrayList<>();
@@ -52,7 +47,7 @@ public final class QueryUtils {
         String response = null;
 
         try {
-            response = makeUSGSRequest();
+            response = makeUSGSRequest(query_url);
         } catch (IOException e) {
             Log.e("QueryUtils", "Problem freeing up resources", e);
         }
@@ -89,12 +84,12 @@ public final class QueryUtils {
         return earthquakes;
     }
 
-    private static String makeUSGSRequest() throws IOException {
+    private static String makeUSGSRequest(String query_url) throws IOException {
         String result = null;
 
         URL url = null;
         try {
-            url = new URL(USGS_QUERY_LINK);
+            url = new URL(query_url);
         } catch (MalformedURLException e) {
             Log.e(LOG_TAG, "Error while creating URL", e);
             return null;
